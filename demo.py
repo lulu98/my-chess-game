@@ -65,29 +65,34 @@ class Chess_Game:
 
 	def legal_move(self,row,col,row2,col2):
 		is_legal_move = True
-		if("white" in self.chess_field[row][col].path):
+		if("pawn" in self.chess_field[row][col].path):
+			if("white" in self.chess_field[row][col].path):
 			#legal move for white pawn
-			if("pawn" in self.chess_field[row][col].path):
 				if(not((row == row2+1 and col == col2 and self.chess_field[row2][col2].path == "") or (row == row2+1 and (col == col2+1 or col == col2-1) and self.chess_field[row2][col2].path != ""))):
 					is_legal_move = False
 				if(row == 6 and row == row2+2 and col == col2 and self.chess_field[row2][col2].path == "" and self.chess_field[row-1][col].path == ""):
 					is_legal_move = True
-			elif("knight" in self.chess_field[row][col].path):
-				if(not((col2 == col-2 and row2 == row+1) or (col2 == col-1 and row2 == row+2) or (col2 == col+1 and row2 == row+2) or (col2 == col+2 and row2 == row+1)
-					or (col2 == col+2 and row2 == row-1) or (col2 == col+1 and row2 == row-2) or (col2 == col-1 and row2 == row-2) or (col2 == col-2 and row2 == row-1))):
+			elif("black" in self.chess_field[row][col].path):
+				if(not((row == row2-1 and col == col2 and self.chess_field[row2][col2].path == "") or (row == row2-1 and (col == col2+1 or col == col2-1) and self.chess_field[row2][col2].path != ""))):
 					is_legal_move = False
-			elif("rook" in self.chess_field[row][col].path):
-				if(not(self.legal_rook_move(row,col,row2,col2))):
-					is_legal_move = False
-			elif("bishop" in self.chess_field[row][col].path):
-				if(not(self.legal_bishop_move(row,col,row2,col2))):
-					is_legal_move = False
-			elif("queen" in self.chess_field[row][col].path):
-				if(not(self.legal_rook_move(row,col,row2,col2) or self.legal_bishop_move(row,col,row2,col2))):
-					is_legal_move = False
-			elif("king" in self.chess_field[row][col].path):
-				if(not((math.fabs(row2-row) == 1 or row == row2) and (math.fabs(col2-col) == 1 or col2 == col))):
-					is_legal_move = False
+				if(row == 1 and row == row2-2 and col == col2 and self.chess_field[row2][col2].path == "" and self.chess_field[row+1][col].path == ""):
+					is_legal_move = True
+		elif("knight" in self.chess_field[row][col].path):
+			if(not((col2 == col-2 and row2 == row+1) or (col2 == col-1 and row2 == row+2) or (col2 == col+1 and row2 == row+2) or (col2 == col+2 and row2 == row+1)
+				or (col2 == col+2 and row2 == row-1) or (col2 == col+1 and row2 == row-2) or (col2 == col-1 and row2 == row-2) or (col2 == col-2 and row2 == row-1))):
+				is_legal_move = False
+		elif("rook" in self.chess_field[row][col].path):
+			if(not(self.legal_rook_move(row,col,row2,col2))):
+				is_legal_move = False
+		elif("bishop" in self.chess_field[row][col].path):
+			if(not(self.legal_bishop_move(row,col,row2,col2))):
+				is_legal_move = False
+		elif("queen" in self.chess_field[row][col].path):
+			if(not(self.legal_rook_move(row,col,row2,col2) or self.legal_bishop_move(row,col,row2,col2))):
+				is_legal_move = False
+		elif("king" in self.chess_field[row][col].path):
+			if(not((math.fabs(row2-row) == 1 or row == row2) and (math.fabs(col2-col) == 1 or col2 == col))):
+				is_legal_move = False
 
 		if(self.chess_field[row][col].path == ""):
 			is_legal_move = False
