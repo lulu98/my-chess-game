@@ -1,7 +1,7 @@
 from mygraphics import *
-
+import math
 '''TODO: 
-- only legit moves should be executed
+- legal moves for black pieces
 - check if check mate
 - history table
 - button to play back move
@@ -10,6 +10,7 @@ from mygraphics import *
 - choose which colour you want to play
 - en peasant
 - if peasant reaches end of field, you should choose which chess_piece you want to continue
+- option for rochade
 '''
 
 SIZE_OF_BOX = 103
@@ -22,7 +23,7 @@ class Chess_Piece:
 		self.lowerY = self.img.anchor.y-(SIZE_OF_BOX/2)
 		self.upperX = self.lowerX + SIZE_OF_BOX
 		self.upperY = self.lowerY + SIZE_OF_BOX
-	
+
 
 class Chess_Game:
 	def __init__(self):
@@ -33,8 +34,8 @@ class Chess_Game:
 		backgroundImage.draw(self.win)
 		self.print_chess_field()
 
-		flag = False
-		while (not(flag)):
+		game_over = False
+		while (not(game_over)):
 			location = self.win.getMouse()
 			for row in range(0,len(self.chess_field)):
 				for col in range(0,len(self.chess_field)):
@@ -47,26 +48,95 @@ class Chess_Game:
 									if(location2.getX() >= self.chess_field[row2][col2].lowerX and location2.getX() <= self.chess_field[row2][col2].upperX and location2.getY() >= self.chess_field[row2][col2].lowerY and location2.getY() <= self.chess_field[row2][col2].upperY):
 										print("hello",self.chess_field[row2][col2].path)
 										if(self.legal_move(row,col,row2,col2)):
-											self.chess_field[row2][col2].img.undraw()
-											self.chess_field[row2][col2] = Chess_Piece(self.chess_field[row2][col2].img.anchor.x,self.chess_field[row2][col2].img.anchor.y,self.chess_field[row][col].path)
-											self.chess_field[row2][col2].img.draw(self.win)
-											self.chess_field[row][col].img.undraw()
-											self.chess_field[row][col] = Chess_Piece(self.chess_field[row][col].img.anchor.x,self.chess_field[row][col].img.anchor.y,"")
-											self.chess_field[row][col].img.draw(self.win)
-												
+											if("king" in self.chess_field[row2][col2].path):
+												game_over = True
+											else:
+												self.chess_field[row2][col2].img.undraw()
+												self.chess_field[row2][col2] = Chess_Piece(self.chess_field[row2][col2].img.anchor.x,self.chess_field[row2][col2].img.anchor.y,self.chess_field[row][col].path)
+												self.chess_field[row2][col2].img.draw(self.win)
+												self.chess_field[row][col].img.undraw()
+												self.chess_field[row][col] = Chess_Piece(self.chess_field[row][col].img.anchor.x,self.chess_field[row][col].img.anchor.y,"")
+												self.chess_field[row][col].img.draw(self.win)
+													
 			time.sleep(0.1)
-		time.sleep(2)
+		print("Game over!")
+		time.sleep(1)
 		win.close()
 
 	def legal_move(self,row,col,row2,col2):
 		is_legal_move = True
+		if("white" in self.chess_field[row][col].path):
+			#legal move for white pawn
+			if("pawn" in self.chess_field[row][col].path):
+				if(not((row == row2+1 and col == col2 and self.chess_field[row2][col2].path == "") or (row == row2+1 and (col == col2+1 or col == col2-1) and self.chess_field[row2][col2].path != ""))):
+					is_legal_move = False
+				if(row == 6 and row == row2+2 and col == col2 and self.chess_field[row2][col2].path == "" and self.chess_field[row-1][col].path == ""):
+					is_legal_move = True
+			elif("knight" in self.chess_field[row][col].path):
+				if(not((col2 == col-2 and row2 == row+1) or (col2 == col-1 and row2 == row+2) or (col2 == col+1 and row2 == row+2) or (col2 == col+2 and row2 == row+1)
+					or (col2 == col+2 and row2 == row-1) or (col2 == col+1 and row2 == row-2) or (col2 == col-1 and row2 == row-2) or (col2 == col-2 and row2 == row-1))):
+					is_legal_move = False
+			elif("rook" in self.chess_field[row][col].path):
+				if(not(self.legal_rook_move(row,col,row2,col2))):
+					is_legal_move = False
+			elif("bishop" in self.chess_field[row][col].path):
+				if(not(self.legal_bishop_move(row,col,row2,col2))):
+					is_legal_move = False
+			elif("queen" in self.chess_field[row][col].path):
+				if(not(self.legal_rook_move(row,col,row2,col2) or self.legal_bishop_move(row,col,row2,col2))):
+					is_legal_move = False
+			elif("king" in self.chess_field[row][col].path):
+				if(not((math.fabs(row2-row) == 1 or row == row2) and (math.fabs(col2-col) == 1 or col2 == col))):
+					is_legal_move = False
+
 		if(self.chess_field[row][col].path == ""):
 			is_legal_move = False
-		elif(self.chess_field[row2][col2].path != ""):
+		if(self.chess_field[row2][col2].path != ""):
 			if(("white" in self.chess_field[row][col].path and "white" in self.chess_field[row2][col2].path) or ("black" in self.chess_field[row][col].path and "black" in self.chess_field[row2][col2].path)):
 				is_legal_move = False
 
 		return is_legal_move
+
+	def legal_rook_move(self,row,col,row2,col2):
+		is_legal_move = True
+		if(not((col2 == col or row2 == row))):
+			is_legal_move = False
+		for i in range(row2+1,row):
+			if self.chess_field[i][col2].path != "":
+				is_legal_move = False
+		for i in range(row+1,row2):
+			if self.chess_field[i][col2].path != "":
+				is_legal_move = False
+		for i in range(col+1,col2):
+			if self.chess_field[row2][i].path != "":
+				is_legal_move = False
+		for i in range(col2+1,col):
+			if self.chess_field[row2][i].path != "":
+				is_legal_move = False
+		return is_legal_move
+
+	def legal_bishop_move(self,row,col,row2,col2):
+		is_legal_move = True
+		if(not(math.fabs(row2-row) == math.fabs(col2-col))):
+			is_legal_move = False
+		if(col2 > col and row2 < row):
+			for i in range(1,col2-col):
+				if self.chess_field[row-i][col+i].path != "":
+					is_legal_move = False
+		elif(col2 < col and row2 < row):
+			for i in range(1,col-col2):
+				if self.chess_field[row2+i][col2+i].path != "":
+					is_legal_move = False
+		elif(col2 < col and row2 > row):
+			for i in range(1,col-col2):
+				if self.chess_field[row+i][col-i].path != "":
+					is_legal_move = False
+		elif(col2 > col and row2 > row):
+			for i in range(1,col2-col):
+				if self.chess_field[row+i][col+i].path != "":
+					is_legal_move = False
+		return is_legal_move
+				
 
 	def print_chess_field(self):
 		for row in self.chess_field:
