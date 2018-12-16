@@ -1,14 +1,13 @@
 from mygraphics import *
 import math
 '''TODO: 
-- turn based chess
 - history table
 - button to play back move
-- implement chess algorithm 
+- implement chess algorithm / ai opponent
 - starting menu to choose if opponent is ai or human player
 - choose which colour you want to play
 - en peasant
-- if peasant reaches end of field, you should choose which chess_piece you want to continue
+- if pawn reaches end of field, you should choose which chess_piece you want to continue
 - option for rochade
 '''
 
@@ -32,21 +31,23 @@ class Chess_Game:
 		self.win.setBackground('black')
 		backgroundImage.draw(self.win)
 		self.print_chess_field()
+		turn = "white"
 
 		game_over = False
 		while (not(game_over)):
+			print(turn + "'s turn.")
 			location = self.win.getMouse()
 			for row in range(0,len(self.chess_field)):
 				for col in range(0,len(self.chess_field)):
-					if(location.getX() >= self.chess_field[row][col].lowerX and location.getX() <= self.chess_field[row][col].upperX and location.getY() >= self.chess_field[row][col].lowerY and location.getY() <= self.chess_field[row][col].upperY):
-						print(self.chess_field[row][col].path)
+					if(self.chess_field[row][col].path != "" and location.getX() >= self.chess_field[row][col].lowerX and location.getX() <= self.chess_field[row][col].upperX and location.getY() >= self.chess_field[row][col].lowerY and location.getY() <= self.chess_field[row][col].upperY):
+						print("1: ",self.chess_field[row][col].path)
 						location2 = self.win.getMouse()
 						if(location2.getX() != location.getX() or location2.getY() != location.getY()):
 							for row2 in range(0,len(self.chess_field)):
 								for col2 in range(0,len(self.chess_field)):
 									if(location2.getX() >= self.chess_field[row2][col2].lowerX and location2.getX() <= self.chess_field[row2][col2].upperX and location2.getY() >= self.chess_field[row2][col2].lowerY and location2.getY() <= self.chess_field[row2][col2].upperY):
-										print("hello",self.chess_field[row2][col2].path)
-										if(self.legal_move(row,col,row2,col2)):
+										print("2: ",self.chess_field[row2][col2].path)
+										if(turn in self.chess_field[row][col].path and self.legal_move(row,col,row2,col2)):
 											if("king" in self.chess_field[row2][col2].path):
 												game_over = True
 											else:
@@ -56,9 +57,17 @@ class Chess_Game:
 												self.chess_field[row][col].img.undraw()
 												self.chess_field[row][col] = Chess_Piece(self.chess_field[row][col].img.anchor.x,self.chess_field[row][col].img.anchor.y,"")
 												self.chess_field[row][col].img.draw(self.win)
-													
+											if(turn == "white"):
+												turn = "black"
+											else:
+												turn = "white"								
+											
 			time.sleep(0.1)
 		print("Game over!")
+		if(turn == "white"):
+			print("Black player is the winner!")
+		else:
+			print("White player is the winner!")
 		time.sleep(1)
 		win.close()
 
