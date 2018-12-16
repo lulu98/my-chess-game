@@ -1,8 +1,7 @@
 from mygraphics import *
 import math
 '''TODO: 
-- legal moves for black pieces
-- check if check mate
+- turn based chess
 - history table
 - button to play back move
 - implement chess algorithm 
