@@ -69,7 +69,7 @@ class Chess_Game:
 		else:
 			print("White player is the winner!")
 		time.sleep(1)
-		win.close()
+		self.win.close()
 
 	def legal_move(self,row,col,row2,col2):
 		is_legal_move = True
