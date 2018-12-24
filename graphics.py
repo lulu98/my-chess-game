@@ -302,13 +302,24 @@ class GraphWin(tk.Canvas):
         self.__checkOpen()
         self.update_idletasks()
 
-    def getMouse(self):
+    def getMouse(self,master):
         """Wait for mouse click and return Point object representing
         the click"""
         self.update()  # flush any prior clicks
         self.mouseX = None
         self.mouseY = None
         while self.mouseX == None or self.mouseY == None:
+            if(master.timer_1.time_to_string_representation() == "00:59" or master.timer_2.time_to_string_representation() == "00:59"):
+                master.game_over = True
+                master.shutdown()
+            if(master.timer_field_player1.getText() != master.timer_1.time_to_string_representation()):
+                master.timer_field_player1.undraw()
+                master.timer_field_player1.setText("White: " + master.timer_1.time_to_string_representation())
+                master.timer_field_player1.draw(master.win)
+            if(master.timer_field_player2.getText() != master.timer_2.time_to_string_representation()):
+                master.timer_field_player2.undraw()
+                master.timer_field_player2.setText("Black: " + master.timer_2.time_to_string_representation())
+                master.timer_field_player2.draw(master.win)
             self.update()
             if self.isClosed(): raise GraphicsError("getMouse in closed window")
             time.sleep(.1)  # give up thread

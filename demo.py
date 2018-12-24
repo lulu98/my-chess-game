@@ -2,10 +2,11 @@ from graphics import *
 import speech_rec
 import math
 from button import *
+from chess_piece import *
+from history_table import *
+from timer import *
 '''TODO: 
-- history table
-- button to play back move
-- timer
+- visualize history table
 - implement chess algorithm / ai opponent
 - starting menu to choose if opponent is ai or human player
 - choose which colour you want to play
@@ -15,15 +16,6 @@ from button import *
 '''
 
 SIZE_OF_BOX = 103
-
-class Chess_Piece:
-	def __init__(self,x,y,path):
-		self.path = path
-		self.img = Image(Point(x,y),path)
-		self.lowerX = self.img.anchor.x-(SIZE_OF_BOX/2)
-		self.lowerY = self.img.anchor.y-(SIZE_OF_BOX/2)
-		self.upperX = self.lowerX + SIZE_OF_BOX
-		self.upperY = self.lowerY + SIZE_OF_BOX
 
 class Chess_Game:
 	def __init__(self):
@@ -44,16 +36,45 @@ class Chess_Game:
 			txt.draw(self.win)
 			txt2 = Text(Point(backgroundImage.getWidth() + 10, i * SIZE_OF_BOX + SIZE_OF_BOX / 2), 8 - i)
 			txt2.draw(self.win)
-		self.exit_btn = Button(backgroundImage.getWidth() + 150, 700, backgroundImage.getWidth() + 300, 750, "Exit",self.win)
-		self.enter_btn = Button(backgroundImage.getWidth() + 150,600, backgroundImage.getWidth()+300,650,"Enter",self.win)
+		self.enter_btn = Button(backgroundImage.getWidth() + 300,550, backgroundImage.getWidth()+450,600,"Enter",self.win)
+		self.go_back_btn = Button(backgroundImage.getWidth()+300,650,backgroundImage.getWidth()+450,700,"Go Back",self.win)
+		self.exit_btn = Button(backgroundImage.getWidth() + 300, 750, backgroundImage.getWidth() + 450, 800, "Exit",self.win)
 		txt1 = Text(Point(backgroundImage.getWidth()+100,20),"Start Position:")
 		txt1.draw(self.win)
 		txt2 = Text(Point(backgroundImage.getWidth()+100,270),"End Position:")
 		txt2.draw(self.win)
+
+		self.timer_1 = ChessTimer(180)
+		self.timer_2 = ChessTimer(180)
+
+		self.timer_field_player1 = Text(Point(backgroundImage.getWidth() + 150, 650),"White: " + self.timer_1.time_to_string_representation())
+		self.timer_field_player1.setSize(20)
+		self.timer_field_player1.draw(self.win)
+		self.timer_field_player2 = Text(Point(backgroundImage.getWidth() + 150, 700),"Black: " + self.timer_2.time_to_string_representation())
+		self.timer_field_player2.setSize(20)
+		self.timer_field_player2.draw(self.win)
+
+		self.current_player = Text(Point(backgroundImage.getWidth()+150,570),"Player white")
+		self.current_player.setSize(20)
+		self.current_player.draw(self.win)
 		self.first_move_x_position = Move_Entry(backgroundImage.getWidth() + 50, 50, backgroundImage.getWidth() + 200, 250, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self.win)
 		self.first_move_y_position = Move_Entry(backgroundImage.getWidth() + 250, 50, backgroundImage.getWidth() + 400, 250, ['1', '2', '3', '4', '5', '6', '7', '8'], self.win)
 		self.second_move_x_position= Move_Entry(backgroundImage.getWidth() + 50, 300, backgroundImage.getWidth() + 200, 500, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self.win)
 		self.second_move_y_position = Move_Entry(backgroundImage.getWidth() + 250, 300, backgroundImage.getWidth() + 400, 500, ['1', '2', '3', '4', '5', '6', '7', '8'], self.win)
+
+	def shutdown(self):
+		print("Game over!")
+		if (self.turn == "white"):
+			print("Black player is the winner!")
+		else:
+			print("White player is the winner!")
+		time.sleep(1)
+		self.win.close()
+		self.timer_1.timeout()
+		self.timer_2.timeout()
+		self.timer_1.join()
+		self.timer_2.join()
+		sys.exit()
 
 	def move_entry_to_position(self,entry):
 		entry = entry.lower()
@@ -64,6 +85,10 @@ class Chess_Game:
 
 	def button_clicked(self,x,y):
 		if(self.exit_btn.is_clicked(x,y)):
+			self.timer_1.timeout()
+			self.timer_2.timeout()
+			self.timer_1.join()
+			self.timer_2.join()
 			sys.exit()
 		elif(self.enter_btn.is_clicked(x,y)):
 			row = self.move_entry_to_position(self.first_move_y_position.get_text())
@@ -83,6 +108,9 @@ class Chess_Game:
 			self.second_move_x_position.reset()
 			self.first_move_y_position.reset()
 			self.second_move_y_position.reset()
+		elif(self.go_back_btn.is_clicked(x,y)):
+			self.update_chess_field(self.history_table.go_back())
+			self.turn = self.history_table.turn
 		elif(self.first_move_x_position.is_clicked(x, y)):
 			if self.first_move_x_position.is_increase(x, y):
 				self.first_move_x_position.increase()
@@ -107,8 +135,17 @@ class Chess_Game:
 	def version_classic(self):
 		self.turn = "white"
 		self.game_over = False
+		self.timer_1.start_timer()
+		self.timer_2.start_timer()
 		while (not (self.game_over)):
 			print(self.turn + "'s turn.")
+			if(self.turn == "white"):
+				self.timer_2.stop_timer()
+				self.timer_1.continue_timer()
+			elif(self.turn == "black"):
+				self.timer_1.stop_timer()
+				self.timer_2.continue_timer()
+			self.current_player.setText("Current Player: " + self.turn)
 			self.one_step()
 
 		print("Game over!")
@@ -120,27 +157,28 @@ class Chess_Game:
 		self.win.close()
 
 	def one_step(self):
-		location = self.win.getMouse()
+		location = self.win.getMouse(self)
 		self.button_clicked(location.getX(), location.getY())
 		if (not self.enter_btn.is_clicked(location.getX(), location.getY())):
 			for row in range(0, len(self.chess_field)):
 				for col in range(0, len(self.chess_field)):
-					if (self.chess_field[row][col].path != "" and location.getX() >= self.chess_field[row][col].lowerX and location.getX() <= self.chess_field[row][col].upperX and location.getY() >=self.chess_field[row][col].lowerY and location.getY() <= self.chess_field[row][col].upperY):
+					if (location.getX() != None and location.getY() != None and self.chess_field[row][col].path != "" and location.getX() >= self.chess_field[row][col].lowerX and location.getX() <= self.chess_field[row][col].upperX and location.getY() >=self.chess_field[row][col].lowerY and location.getY() <= self.chess_field[row][col].upperY):
 						print("1: ", self.chess_field[row][col].path)
 						self.calculate_move(row,col,location)
 
 	def calculate_move(self,row,col,location):
-		location2 = self.win.getMouse()
+		location2 = self.win.getMouse(self)
 		self.button_clicked(location2.getX(), location2.getY())
 		if (not (self.enter_btn.is_clicked(location2.getX(),location2.getY())) and location2.getX() != location.getX() or location2.getY() != location.getY()):
 			for row2 in range(0, len(self.chess_field)):
 				for col2 in range(0, len(self.chess_field)):
-					if (location2.getX() >= self.chess_field[row2][col2].lowerX and location2.getX() <=self.chess_field[row2][col2].upperX and location2.getY() >= self.chess_field[row2][col2].lowerY and location2.getY() <= self.chess_field[row2][col2].upperY):
+					if (location2.getX() != None and location2.getY() != None and location2.getX() >= self.chess_field[row2][col2].lowerX and location2.getX() <=self.chess_field[row2][col2].upperX and location2.getY() >= self.chess_field[row2][col2].lowerY and location2.getY() <= self.chess_field[row2][col2].upperY):
 						print("2: ", self.chess_field[row2][col2].path)
 						self.perform_move(row,col,row2,col2)
 
 	def perform_move(self,row,col,row2,col2):
 		if (self.turn in self.chess_field[row][col].path and self.legal_move(row, col, row2, col2)):
+			self.history_table.add_step(self.chess_field)
 			if ("king" in self.chess_field[row2][col2].path):
 				self.game_over = True
 			else:
@@ -154,6 +192,7 @@ class Chess_Game:
 				self.turn = "black"
 			else:
 				self.turn = "white"
+
 
 	def version_voice_control(self):
 		turn = "white"
@@ -196,7 +235,7 @@ class Chess_Game:
 		is_legal_move = True
 		if("pawn" in self.chess_field[row][col].path):
 			if("white" in self.chess_field[row][col].path):
-			#legal move for white pawn
+				#legal move for white pawn
 				if(not((row == row2+1 and col == col2 and self.chess_field[row2][col2].path == "") or (row == row2+1 and (col == col2+1 or col == col2-1) and self.chess_field[row2][col2].path != ""))):
 					is_legal_move = False
 				if(row == 6 and row == row2+2 and col == col2 and self.chess_field[row2][col2].path == "" and self.chess_field[row-1][col].path == ""):
@@ -208,7 +247,7 @@ class Chess_Game:
 					is_legal_move = True
 		elif("knight" in self.chess_field[row][col].path):
 			if(not((col2 == col-2 and row2 == row+1) or (col2 == col-1 and row2 == row+2) or (col2 == col+1 and row2 == row+2) or (col2 == col+2 and row2 == row+1)
-				or (col2 == col+2 and row2 == row-1) or (col2 == col+1 and row2 == row-2) or (col2 == col-1 and row2 == row-2) or (col2 == col-2 and row2 == row-1))):
+				   or (col2 == col+2 and row2 == row-1) or (col2 == col+1 and row2 == row-2) or (col2 == col-1 and row2 == row-2) or (col2 == col-2 and row2 == row-1))):
 				is_legal_move = False
 		elif("rook" in self.chess_field[row][col].path):
 			if(not(self.legal_rook_move(row,col,row2,col2))):
@@ -277,20 +316,29 @@ class Chess_Game:
 				if(elem.path != ""):
 					elem.img.draw(self.win)
 
+	def update_chess_field(self,chess_field):
+		for row in self.chess_field:
+			for elem in row:
+				elem.img.undraw()
+		self.chess_field = chess_field
+		for row in self.chess_field:
+			for elem in row:
+				elem.img.draw(self.win)
+
+
 	def initialize_game_field(self):
 		self.chess_field = []
-		self.history_table = []
 		firstrow = [Chess_Piece(52,52,"black_rook.gif"),Chess_Piece(154,52,"black_knight.gif"),Chess_Piece(256,52,"black_bishop.gif"),Chess_Piece(358,52,"black_queen.gif"),
-		Chess_Piece(460,52,"black_king.gif"),Chess_Piece(562,52,"black_bishop.gif"),Chess_Piece(664,52,"black_knight.gif"),Chess_Piece(766,52,"black_rook.gif")]
+					Chess_Piece(460,52,"black_king.gif"),Chess_Piece(562,52,"black_bishop.gif"),Chess_Piece(664,52,"black_knight.gif"),Chess_Piece(766,52,"black_rook.gif")]
 		secondrow = []
 		for i in range(0,8):
 			secondrow.append(Chess_Piece(52 + i*103,155,"black_pawn.gif"))
 		seventhrow = []
 		for i in range(0,8):
 			seventhrow.append(Chess_Piece(52 + i*103,670,"white_pawn.gif"))
-		
+
 		eighthrow = [Chess_Piece(52,773,"white_rook.gif"),Chess_Piece(154,773,"white_knight.gif"),Chess_Piece(256,773,"white_bishop.gif"),Chess_Piece(358,773,"white_queen.gif"),
-		Chess_Piece(460,773,"white_king.gif"),Chess_Piece(562,773,"white_bishop.gif"),Chess_Piece(664,773,"white_knight.gif"),Chess_Piece(766,773,"white_rook.gif")]
+					 Chess_Piece(460,773,"white_king.gif"),Chess_Piece(562,773,"white_bishop.gif"),Chess_Piece(664,773,"white_knight.gif"),Chess_Piece(766,773,"white_rook.gif")]
 		self.chess_field.append(firstrow)
 		self.chess_field.append(secondrow)
 		for row in range(2,6):
@@ -300,7 +348,7 @@ class Chess_Game:
 			self.chess_field.append(onerow)
 		self.chess_field.append(seventhrow)
 		self.chess_field.append(eighthrow)
-
+		self.history_table = HistoryTable(self.chess_field)
 
 
 demo = Chess_Game()
