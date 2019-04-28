@@ -6,6 +6,7 @@ from chess_piece import *
 from history_table import *
 from timer import *
 '''TODO: 
+- faster speech recognition (package from https://realpython.com/python-speech-recognition/)
 - visualize history table
 - implement chess algorithm / ai opponent
 - starting menu to choose if opponent is ai or human player
@@ -27,7 +28,8 @@ class Chess_Game:
 		#self.version_voice_control()
 
 	def initialize_gui(self):
-		backgroundImage = Image(Point(412, 412), "plain_chess_field.gif")
+		#backgroundImage = Image(Point(412, 412), "plain_chess_field.gif")
+		backgroundImage = Image(Point(412, 412), "chess_field.gif")
 		self.win = GraphWin("My Chess Game", backgroundImage.getWidth() + 500, backgroundImage.getHeight() + 25)
 		self.win.setBackground('gray')
 		backgroundImage.draw(self.win)
@@ -154,6 +156,10 @@ class Chess_Game:
 		else:
 			print("White player is the winner!")
 		time.sleep(1)
+		self.timer_1.timeout()
+		self.timer_2.timeout()
+		self.timer_1.join()
+		self.timer_2.join()
 		self.win.close()
 
 	def one_step(self):
